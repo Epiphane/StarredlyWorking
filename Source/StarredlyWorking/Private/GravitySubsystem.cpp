@@ -48,14 +48,14 @@ void UGravitySubsystem::Tick(float DeltaTime)
             double LineDist = FMath::Min(Distance / 2 - 10, 300);
             if (CompA->bCanBePulled && CompB->bCanPullObjects)
             {
-                DrawDebugDirectionalArrow(GetWorld(), LocationA, LocationA + LineDist * Direction, 100.0f, FColor::Purple, false, -1.0f, 2, Force / 1000.0f);
+                DrawDebugDirectionalArrow(GetWorld(), LocationA, LocationA + LineDist * Direction, 100.0f, FColor::Purple, false, -1.0f, 2, FMath::Clamp(Force / 1000.0f, 1.0f, 40.0f));
                 FVector Pull = Force * Direction;
                 BodyA->AddForce(Pull);
             }
 
             if (CompB->bCanBePulled && CompA->bCanPullObjects)
             {
-                DrawDebugDirectionalArrow(GetWorld(), LocationB, LocationB + LineDist * -Direction, 100.0f, FColor::Orange, false, -1.0f, 1, Force / 1000.0f);
+                DrawDebugDirectionalArrow(GetWorld(), LocationB, LocationB + LineDist * -Direction, 100.0f, FColor::Orange, false, -1.0f, 1, FMath::Clamp(Force / 1000.0f, 1.0f, 40.0f));
                 FVector Pull = -Force * Direction;
                 BodyB->AddForce(Pull);
             }
