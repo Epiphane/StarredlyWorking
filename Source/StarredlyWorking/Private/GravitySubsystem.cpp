@@ -39,22 +39,24 @@ void UGravitySubsystem::Tick(float DeltaTime)
             UPrimitiveComponent* BodyB = ActorB->GetComponentByClass<UPrimitiveComponent>();
 
             FVector Direction = LocationB - LocationA;
+            double Distance = Direction.Length();
 
             constexpr float G = 5000.0f;
             float Force = G * BodyA->GetMass() * BodyB->GetMass() / Direction.SquaredLength();
 
             Direction.Normalize();
+            double LineDist = FMath::Min(Distance / 2 - 10, 300);
             if (CompA->bCanBePulled && CompB->bCanPullObjects)
             {
+                DrawDebugDirectionalArrow(GetWorld(), LocationA, LocationA + LineDist * Direction, 100.0f, FColor::Purple, false, -1.0f, 2, Force / 1000.0f);
                 FVector Pull = Force * Direction;
-                DrawDebugDirectionalArrow(GetWorld(), LocationA, LocationA + 300 * Direction, 100.0f, FColor::Red, false, -1.0f, 0, Force / 1000.0f);
                 BodyA->AddForce(Pull);
             }
 
             if (CompB->bCanBePulled && CompA->bCanPullObjects)
             {
+                DrawDebugDirectionalArrow(GetWorld(), LocationB, LocationB + LineDist * -Direction, 100.0f, FColor::Orange, false, -1.0f, 1, Force / 1000.0f);
                 FVector Pull = -Force * Direction;
-                DrawDebugDirectionalArrow(GetWorld(), LocationB, LocationB + 300 * Direction, 5.0f, FColor::Red);
                 BodyB->AddForce(Pull);
             }
         }
