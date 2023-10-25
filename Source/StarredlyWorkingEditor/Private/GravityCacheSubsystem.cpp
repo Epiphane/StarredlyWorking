@@ -64,12 +64,20 @@ void UGravityCacheSubsystem::RecacheSplines(UWorld* InWorld)
 
 	bIsRecaching = true;
 
-	UWorld* SimWorld = UWorld::CreateWorld(EWorldType::GamePreview, false);
-
 	//UWorld* World = DuplicateObject<UWorld>(InWorld, GetTransientPackage(), MakeUniqueObjectName(GetTransientPackage(), UWorld::StaticClass(), "SimulationWorld"));
-
 	//UE_LOG(LogGravityCache, Log, TEXT("Planet pos: %s"))
-	World->Tick(ELevelTick::LEVELTICK_All, 0.016f);
+	UWorld* World = UWorld::CreateWorld(EWorldType::GamePreview, false);
+	FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::GamePreview);
+	WorldContext.SetCurrentWorld(World);
+
+	FURL URL;
+	World->InitializeActorsForPlay(URL);
+	World->BeginPlay();
+
+	World->Tick(ELevelTick::LEVELTICK_All, 1.0f / 60.0f);
+
+	GEngine->DestroyWorldContext(World);
+	World->DestroyWorld(false);
 
 	//World->DestroyWorld();
 
