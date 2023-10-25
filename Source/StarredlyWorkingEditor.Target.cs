@@ -10,6 +10,9 @@ public class StarredlyWorkingEditorTarget : TargetRules
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V4;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_3;
-		ExtraModuleNames.Add("StarredlyWorking");
+		ExtraModuleNames.AddRange(new string[] {
+			"StarredlyWorking",
+			"StarredlyWorkingEditor",
+		});
 	}
 }

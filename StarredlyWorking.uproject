@@ -12,6 +12,15 @@
 				"Engine",
 				"CoreUObject"
 			]
+		},
+		{
+			"Name": "StarredlyWorkingEditor",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit",
+			"AdditionalDependencies": [
+				"Engine",
+				"CoreUObject"
+			]
 		}
 	],
 	"Plugins": [
