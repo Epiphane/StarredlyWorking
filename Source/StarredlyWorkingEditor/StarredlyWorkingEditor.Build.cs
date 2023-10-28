@@ -13,6 +13,8 @@ public class StarredlyWorkingEditor : ModuleRules
 			"CoreUObject",
 			"Engine",
 			"InputCore",
+			"UnrealEd",
+			"SubobjectDataInterface",
 			"StarredlyWorking",
 			"EditorSubsystem",
 		});
