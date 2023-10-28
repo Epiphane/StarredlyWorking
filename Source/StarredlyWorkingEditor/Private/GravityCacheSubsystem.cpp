@@ -13,6 +13,7 @@
 #include "Components/SplineComponent.h"
 #include "SubobjectDataSubsystem.h"
 #include "SubobjectDataHandle.h"
+#include "EngineUtils.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGravityCache, Log, All);
 
@@ -23,10 +24,20 @@ void UGravityCacheSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 #endif
 }
 
+void UGravityCacheSubsystem::Tick(float DeltaTime)
+{
+	if (bIsDirty)
+	{
+		//GEditor->GetSelectionStateOfLevel
+		RecacheSplines(GWorld);
+		bIsDirty = false;
+	}
+}
+
 bool UGravityCacheSubsystem::IsActorInSimulation(AActor* Actor)
 {
 	// GravityMovementComponents DEFINITELY affect the simulation.
-	if (Actor->GetComponentByClass<UGravityMovementComponent>() != nullptr)
+	if (Actor && Actor->GetComponentByClass<UGravityMovementComponent>() != nullptr)
 	{
 		return true;
 	}
@@ -38,7 +49,7 @@ void UGravityCacheSubsystem::OnObjectPostEditChange(UObject* Object, FPropertyCh
 {
 	bool bUpdateCache = false;
 
-	if (!PropertyChangedEvent.Property)
+	if (!Object || !PropertyChangedEvent.Property)
 	{
 		// Probably not changing an actor
 		return;
@@ -66,7 +77,8 @@ void UGravityCacheSubsystem::OnObjectPostEditChange(UObject* Object, FPropertyCh
 
 	if (bUpdateCache)
 	{
-		RecacheSplines(Object->GetWorld());
+		bIsDirty = true;
+
 	}
 }
 
@@ -79,43 +91,22 @@ void UGravityCacheSubsystem::RecacheSplines(UWorld* InWorld)
 
 	bIsRecaching = true;
 
-	UPackage* TempPackage = CreatePackage(nullptr);
-	TempPackage->MarkAsFullyLoaded();
-
 	UPackage* InPackage = InWorld->GetOutermost();
 
-	FName WorldName = MakeUniqueObjectName(TempPackage, UWorld::StaticClass(), FName(FString::Printf(TEXT("SimWorld"))));
-	/*
-	FObjectDuplicationParameters Parameters(InWorld, TempPackage);
-	Parameters.DestName = InWorld->GetFName();
-	Parameters.DestClass = InWorld->GetClass();
-	Parameters.DuplicateMode = EDuplicateMode::PIE;
-	Parameters.PortFlags = PPF_DuplicateForPIE;
+	UPackage* SimContainer = CreatePackage(TEXT("/Temp/SimContainer"));
+	SimContainer->MarkAsFullyLoaded();
 
-	UWorld* World = CastChecked<UWorld>(StaticDuplicateObjectEx(Parameters));
-	UWorld* World = DuplicateObject<UWorld>(InWorld, TempPackage, WorldName);
-	World->WorldType = EWorldType::Game;
-	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, "SimWorld", nullptr, false);
-	*/
-	UWorld* World = NewObject<UWorld>(TempPackage, WorldName);
+	FName WorldName = MakeUniqueObjectName(SimContainer, UWorld::StaticClass(), FName(FString::Printf(TEXT("SimWorld"))));
+	UWorld* World = NewObject<UWorld>(SimContainer, WorldName);
 	World->SetFlags(RF_Transactional);
 	World->WorldType = EWorldType::Game;
 	FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Game);
 	WorldContext.SetCurrentWorld(World);
 
-	World->PersistentLevel = NewObject<ULevel>(this, TEXT("PersistentLevel"));
-	World->PersistentLevel->Initialize(FURL(nullptr));
-	World->PersistentLevel->Model = NewObject<UModel>(World->PersistentLevel);
-	World->PersistentLevel->Model->Initialize(nullptr, 1);
-	World->PersistentLevel->OwningWorld = World;
-	World->SetCurrentLevel(World->PersistentLevel);
-
-	World->PersistentLevel->SetWorldSettings(
-		World->SpawnActor<AWorldSettings>(GEngine->WorldSettingsClass)
-	);
-
-	ULevel* DuplicatedLevel = DuplicateObject<ULevel>(InWorld->PersistentLevel, World, FName("SimLevel"));
-	World->PersistentLevel = DuplicatedLevel;
+	World->InitializeNewWorld({}, true);
+	
+	// Duplicate the level to our own and then initialize it.
+	World->PersistentLevel = DuplicateObject<ULevel>(InWorld->PersistentLevel, World, FName("SimLevel"));
 	World->InitWorld(UWorld::InitializationValues()
 		.ShouldSimulatePhysics(true)
 		.EnableTraceCollision(true)
@@ -125,34 +116,28 @@ void UGravityCacheSubsystem::RecacheSplines(UWorld* InWorld)
 	struct FSplineConnection {
 		USplineComponent* Owner;
 		const USplineComponent* Simulating;
-		int index = 0;
 	};
 
 	FURL URL;
 	World->InitializeActorsForPlay(URL);
 
-	if (InWorld->PersistentLevel->Actors.Num() != World->PersistentLevel->Actors.Num())
-	{
-		bIsRecaching = false;
-		return;
-	}
-	
 	TArray<FSplineConnection> Splines;
-	for (int i = 0; i < InWorld->PersistentLevel->Actors.Num(); ++i)
+	for (TActorIterator<AActor> It(InWorld); It; ++It)
 	{
-		AActor* OriginalActor = InWorld->PersistentLevel->Actors[i];
-		if (!OriginalActor)
+		FName Search = It->GetFName();
+		TObjectPtr<AActor>* Other = World->PersistentLevel->Actors.FindByPredicate([&](const AActor* Actor) { return Actor->GetFName() == Search; });
+		
+		if (!Other)
 		{
 			continue;
 		}
 
-		if (USplineComponent* Spline = OriginalActor->GetComponentByClass<USplineComponent>())
+		if (USplineComponent* Spline = It->GetComponentByClass<USplineComponent>())
 		{
 			FSplineConnection Connection;
 			Connection.Owner = Spline;
 			Connection.Owner->SetSplinePoints({}, ESplineCoordinateSpace::Local, false);
-			Connection.Simulating = World->PersistentLevel->Actors[i]->GetComponentByClass<USplineComponent>();
-			Connection.index = i;
+			Connection.Simulating = (*Other)->GetComponentByClass<USplineComponent>();
 
 			if (Connection.Owner && Connection.Simulating)
 			{
@@ -160,11 +145,11 @@ void UGravityCacheSubsystem::RecacheSplines(UWorld* InWorld)
 			}
 		}
 	}
-	World->BeginPlay();
 
-	for (const auto& Actor : World->PersistentLevel->Actors)
+	World->BeginPlay();
+	for (TActorIterator<AActor> It(World); It; ++It)
 	{
-		Actor->DispatchBeginPlay(false);
+		It->DispatchBeginPlay(false);
 	}
 
 	int j = 0;
@@ -199,8 +184,20 @@ void UGravityCacheSubsystem::RecacheSplines(UWorld* InWorld)
 
 	bIsRecaching = false;
 
+	//World->PersistentLevel->MarkPendingKill();
+	/*
+	for (TActorIterator<AActor> It(World); It; ++It)
+	{
+		It->Destroy();
+	}
 	World->DestroyWorld(false);
+	World->PersistentLevel->MarkPendingKill();
+	World->PersistentLevel = nullptr;
+	World->MarkPendingKill();
+	World->RemoveFromRoot();
+	*/
 
 	// idk man, shit
+	SimContainer->ClearDirtyFlag();
 	GUnrealEd->Trans->SetUndoBarrier();
 }
