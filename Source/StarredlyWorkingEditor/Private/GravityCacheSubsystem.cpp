@@ -116,6 +116,7 @@ void UGravityCacheSubsystem::RecacheSplines(UWorld* InWorld)
 	struct FSplineConnection {
 		USplineComponent* Owner;
 		const USplineComponent* Simulating;
+		FVector Initial;
 	};
 
 	FURL URL;
@@ -138,6 +139,7 @@ void UGravityCacheSubsystem::RecacheSplines(UWorld* InWorld)
 			Connection.Owner = Spline;
 			Connection.Owner->SetSplinePoints({}, ESplineCoordinateSpace::Local, false);
 			Connection.Simulating = (*Other)->GetComponentByClass<USplineComponent>();
+			Connection.Initial = Spline->GetOwner()->GetActorLocation();
 
 			if (Connection.Owner && Connection.Simulating)
 			{
@@ -162,7 +164,7 @@ void UGravityCacheSubsystem::RecacheSplines(UWorld* InWorld)
 			{
 				if (ensure(Spline.Simulating))
 				{
-					Spline.Owner->AddSplinePoint(Spline.Simulating->GetOwner()->GetActorLocation(), ESplineCoordinateSpace::Local, false);
+					Spline.Owner->AddSplinePoint(Spline.Simulating->GetOwner()->GetActorLocation() - Spline.Initial, ESplineCoordinateSpace::Local, false);
 				}
 			}
 		}
@@ -176,16 +178,13 @@ void UGravityCacheSubsystem::RecacheSplines(UWorld* InWorld)
 	{
 		Spline.Owner->UpdateSpline();
 		Spline.Owner->Duration = 60.0f;
-
 		Spline.Owner->bSplineHasBeenEdited = true;
 
 		FComponentVisualizer::NotifyPropertyModified(Spline.Owner, SplineCurvesProperty);
 	}
 
 	bIsRecaching = false;
-
-	//World->PersistentLevel->MarkPendingKill();
-	/*
+	
 	for (TActorIterator<AActor> It(World); It; ++It)
 	{
 		It->Destroy();
@@ -195,9 +194,4 @@ void UGravityCacheSubsystem::RecacheSplines(UWorld* InWorld)
 	World->PersistentLevel = nullptr;
 	World->MarkPendingKill();
 	World->RemoveFromRoot();
-	*/
-
-	// idk man, shit
-	SimContainer->ClearDirtyFlag();
-	GUnrealEd->Trans->SetUndoBarrier();
 }
