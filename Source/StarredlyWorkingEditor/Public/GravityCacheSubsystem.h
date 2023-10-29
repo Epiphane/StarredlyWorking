@@ -6,6 +6,8 @@
 #include "EditorSubsystem.h"
 #include "GravityCacheSubsystem.generated.h"
 
+class USplineComponent;
+
 UCLASS()
 class STARREDLYWORKINGEDITOR_API UGravityCacheSubsystem : public UEditorSubsystem, public FTickableEditorObject
 {
@@ -21,8 +23,23 @@ public:
 private:
 	static bool IsActorInSimulation(AActor* Actor);
 	void OnObjectPostEditChange(UObject* Object, FPropertyChangedEvent& PropertyChangedEvent);
+	bool bIsDirty = false;
+
+private:
+	void CreateSimulation(UWorld* Base);
+	void TickWorldOneTime(float TimeStep);
+	void CleanupSimulation();
+
+	struct FSplineConnection {
+		USplineComponent* Owner;
+		const USplineComponent* Simulating;
+		FVector InitialPosition;
+	};
+
+	FProperty* SplineCurvesProperty = nullptr;
 
 	void RecacheSplines(UWorld* World);
-	bool bIsRecaching = false;
-	bool bIsDirty = false;
+	UWorld* SimWorld = nullptr;
+	TArray<FSplineConnection> SimSplines;
+	int LastCachedSecond = 0;
 };
