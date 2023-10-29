@@ -49,7 +49,9 @@ void UGravityCacheSubsystem::OnObjectPostEditChange(UObject* Object, FPropertyCh
 {
 	bool bUpdateCache = false;
 
-	if (!Object || !PropertyChangedEvent.Property)
+	if (!Object || 
+		!PropertyChangedEvent.Property ||
+		PropertyChangedEvent.ChangeType == EPropertyChangeType::Interactive)
 	{
 		// Probably not changing an actor
 		return;
@@ -78,7 +80,6 @@ void UGravityCacheSubsystem::OnObjectPostEditChange(UObject* Object, FPropertyCh
 	if (bUpdateCache)
 	{
 		bIsDirty = true;
-
 	}
 }
 
@@ -194,4 +195,5 @@ void UGravityCacheSubsystem::RecacheSplines(UWorld* InWorld)
 	World->PersistentLevel = nullptr;
 	World->MarkPendingKill();
 	World->RemoveFromRoot();
+	GEngine->DestroyWorldContext(World);
 }
