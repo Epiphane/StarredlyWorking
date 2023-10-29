@@ -55,16 +55,6 @@ void UGravityCacheSubsystem::Tick(float DeltaTime)
 				return;
 			}
 		}
-
-		/*
-		for (FSplineConnection& Spline : SimSplines)
-		{
-			Spline.Owner->UpdateSpline();
-			Spline.Owner->Duration = SimWorld->TimeSeconds;
-			Spline.Owner->bSplineHasBeenEdited = true;
-			FComponentVisualizer::NotifyPropertyModified(Spline.Owner, SplineCurvesProperty);
-		}
-		*/
 	}
 }
 
