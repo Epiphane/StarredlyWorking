@@ -12,6 +12,10 @@ UCLASS()
 class STARREDLYWORKING_API UGravitySubsystem : public UTickableWorldSubsystem
 {
 	GENERATED_BODY()
+
+public:
+	UFUNCTION(BlueprintCallable)
+	void SetEnabled(bool bEnabled);
 	
 	// UTickableWorldSubsystem implementation
 	virtual void Tick(float DeltaTime) override;
@@ -26,5 +30,6 @@ public:
 private:
 	void CompactSources();
 
+	bool bEnabled = true;
 	TArray<TWeakObjectPtr<UGravityMovementComponent>> GravitySources;
 };

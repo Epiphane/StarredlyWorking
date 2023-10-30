@@ -4,8 +4,18 @@
 #include "DrawDebugHelpers.h"
 #include "GravityMovementComponent.h"
 
+void UGravitySubsystem::SetEnabled(bool enabled)
+{
+    bEnabled = enabled;
+}
+
 void UGravitySubsystem::Tick(float DeltaTime)
 {
+    if (!bEnabled)
+    {
+        return;
+    }
+
     bool bNeedsCompact = false;
     for (const auto Comp : GravitySources)
     {
