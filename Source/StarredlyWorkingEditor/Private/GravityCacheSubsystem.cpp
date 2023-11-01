@@ -13,6 +13,7 @@
 #include "Components/SplineComponent.h"
 #include "SubobjectDataSubsystem.h"
 #include "SubobjectDataHandle.h"
+#include "SimulationCacheComponent.h"
 #include "EngineUtils.h"
 #include "PathCacheSettings.h"
 
@@ -99,13 +100,22 @@ void UGravityCacheSubsystem::CreateSimulation(UWorld* Base)
 			FSplineConnection Connection;
 			Connection.Owner = Spline;
 			Connection.Owner->SetSplinePoints({}, ESplineCoordinateSpace::Local, false);
-			Connection.Simulating = (*Other)->GetComponentByClass<USplineComponent>();
+			Connection.Simulating = *Other;
 			Connection.InitialPosition = Spline->GetOwner()->GetActorLocation();
+			Connection.InitialRotation = Spline->GetOwner()->GetActorRotation();
 
 			if (Connection.Owner && Connection.Simulating)
 			{
 				SimSplines.Add(Connection);
 			}
+		}
+
+		if (USimulationCacheComponent* Cache = It->GetComponentByClass<USimulationCacheComponent>())
+		{
+			Cache->Position.Points.Empty();
+			Cache->Velocity.Points.Empty();;
+			Cache->Rotation.Points.Empty();;
+			Cache->AngularVelocity.Points.Empty();;
 		}
 	}
 
@@ -126,6 +136,8 @@ void UGravityCacheSubsystem::TickWorldOneTime(float TimeStep)
 		return;
 	}
 
+	SimWorld->Tick(LEVELTICK_All, TimeStep);
+
 	int CurrentSecond = FMath::TruncToInt(SimWorld->TimeSeconds);
 	if (CurrentSecond > LastCachedSecond)
 	{
@@ -133,14 +145,31 @@ void UGravityCacheSubsystem::TickWorldOneTime(float TimeStep)
 		{
 			if (ensure(Spline.Simulating))
 			{
-				Spline.Owner->AddSplinePoint(Spline.Simulating->GetOwner()->GetActorLocation() - Spline.InitialPosition, ESplineCoordinateSpace::Local, true);
+				FSplinePoint Point;
+				FVector Velocity = Spline.Simulating->GetVelocity();
+				Point.LeaveTangent = Velocity;
+				Point.ArriveTangent = -Velocity;
+				Point.InputKey = SimWorld->TimeSeconds;
+				Point.Position = Spline.Simulating->GetActorLocation();
+				Point.Rotation = Spline.Simulating->GetActorRotation();
+				Point.Type = ESplinePointType::Type::Curve;
+				Spline.Owner->AddPoint(Point);
+				
+				USimulationCacheComponent* Cache = Spline.Owner->GetOwner()->GetComponentByClass<USimulationCacheComponent>();
+				UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Spline.Simulating->GetRootComponent());
+				if (Cache && Primitive)
+				{
+					Cache->Position.Points.Add({ (float)SimWorld->TimeSeconds, Point.Position });
+					Cache->Velocity.Points.Add({ (float)SimWorld->TimeSeconds, Velocity });
+					Cache->Rotation.Points.Add({ (float)SimWorld->TimeSeconds, Point.Rotation.Quaternion() });
+					Cache->AngularVelocity.Points.Add({ (float)SimWorld->TimeSeconds, Primitive->GetPhysicsAngularVelocityInDegrees() });
+				}
 			}
 		}
 
 		LastCachedSecond = CurrentSecond;
 	}
 
-	SimWorld->Tick(LEVELTICK_All, TimeStep);
 	GFrameCounter++;
 }
 
@@ -159,6 +188,14 @@ void UGravityCacheSubsystem::CleanupSimulation()
 		Spline.Owner->bSplineHasBeenEdited = true;
 
 		FComponentVisualizer::NotifyPropertyModified(Spline.Owner, SplineCurvesProperty);
+
+		if (USimulationCacheComponent* Cache = Spline.Owner->GetOwner()->GetComponentByClass<USimulationCacheComponent>())
+		{
+			Cache->Position.AutoSetTangents(0.0f, false);
+			Cache->Velocity.AutoSetTangents(0.0f, false);
+			Cache->Rotation.AutoSetTangents(0.0f, false);
+			Cache->AngularVelocity.AutoSetTangents(0.0f, false);
+		}
 	}
 
 	for (TActorIterator<AActor> It(SimWorld); It; ++It)

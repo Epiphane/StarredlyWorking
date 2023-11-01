@@ -32,8 +32,9 @@ private:
 
 	struct FSplineConnection {
 		USplineComponent* Owner;
-		const USplineComponent* Simulating;
+		const AActor* Simulating;
 		FVector InitialPosition;
+		FRotator InitialRotation;
 	};
 
 	FProperty* SplineCurvesProperty = nullptr;
