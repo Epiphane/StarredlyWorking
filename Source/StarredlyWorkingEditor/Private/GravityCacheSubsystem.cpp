@@ -150,7 +150,7 @@ void UGravityCacheSubsystem::TickWorldOneTime(float TimeStep)
 				Point.LeaveTangent = Velocity;
 				Point.ArriveTangent = -Velocity;
 				Point.InputKey = SimWorld->TimeSeconds;
-				Point.Position = Spline.Simulating->GetActorLocation();
+				Point.Position = Spline.Simulating->GetActorLocation() - Spline.InitialPosition;
 				Point.Rotation = Spline.Simulating->GetActorRotation();
 				Point.Type = ESplinePointType::Type::Curve;
 				Spline.Owner->AddPoint(Point);
