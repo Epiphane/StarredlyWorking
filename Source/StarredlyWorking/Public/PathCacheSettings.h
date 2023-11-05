@@ -7,7 +7,7 @@
 #include "PathCacheSettings.generated.h"
 
 // Defines the settings used when caching planet paths.
-UCLASS(Config = Game, defaultconfig, meta = (DisplayName = "Path Cache Settings"))
+UCLASS(Config = Editor, defaultconfig, meta = (DisplayName = "Path Cache Settings"))
 class STARREDLYWORKING_API UPathCacheSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()

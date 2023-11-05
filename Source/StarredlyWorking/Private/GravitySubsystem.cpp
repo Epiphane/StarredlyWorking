@@ -3,6 +3,7 @@
 #include "GravitySubsystem.h"
 #include "DrawDebugHelpers.h"
 #include "GravityMovementComponent.h"
+#include "GravitySettings.h"
 
 void UGravitySubsystem::SetEnabled(bool enabled)
 {
@@ -31,6 +32,8 @@ void UGravitySubsystem::Tick(float DeltaTime)
         CompactSources();
     }
 
+    const UGravitySettings* Gravity = GetDefault<UGravitySettings>();
+
     for (auto ItA = GravitySources.begin(); ItA != GravitySources.end(); ++ItA)
     {
         UGravityMovementComponent* CompA = (*ItA).Get();
@@ -51,21 +54,26 @@ void UGravitySubsystem::Tick(float DeltaTime)
             FVector Direction = LocationB - LocationA;
             double Distance = Direction.Length();
 
-            constexpr float G = 5000.0f;
-            float Force = G * BodyA->GetMass() * BodyB->GetMass() / Direction.SquaredLength();
+            float Force = Gravity->G * BodyA->GetMass() * BodyB->GetMass() / FMath::Pow(Distance, Gravity->DistanceStrength);
 
             Direction.Normalize();
             double LineDist = FMath::Min(Distance / 2 - 10, 300);
             if (CompA->bCanBePulled && CompB->bCanPullObjects)
             {
-                DrawDebugDirectionalArrow(GetWorld(), LocationA, LocationA + LineDist * Direction, 100.0f, FColor::Purple, false, -1.0f, 2, FMath::Clamp(Force / 1000.0f, 1.0f, 40.0f));
+                if (Gravity->bShowDebugArrows)
+                {
+                    DrawDebugDirectionalArrow(GetWorld(), LocationA, LocationA + LineDist * Direction, 100.0f, FColor::Purple, false, -1.0f, 2, FMath::Clamp(Force / 1000.0f, 1.0f, 40.0f));
+                }
                 FVector Pull = Force * Direction;
                 BodyA->AddForce(Pull);
             }
 
             if (CompB->bCanBePulled && CompA->bCanPullObjects)
             {
-                DrawDebugDirectionalArrow(GetWorld(), LocationB, LocationB + LineDist * -Direction, 100.0f, FColor::Orange, false, -1.0f, 1, FMath::Clamp(Force / 1000.0f, 1.0f, 40.0f));
+                if (Gravity->bShowDebugArrows)
+                {
+                    DrawDebugDirectionalArrow(GetWorld(), LocationB, LocationB + LineDist * -Direction, 100.0f, FColor::Orange, false, -1.0f, 1, FMath::Clamp(Force / 1000.0f, 1.0f, 40.0f));
+                }
                 FVector Pull = -Force * Direction;
                 BodyB->AddForce(Pull);
             }
