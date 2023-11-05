@@ -32,13 +32,11 @@ void UGravityCacheSubsystem::Tick(float DeltaTime)
 {
 	if (bIsDirty)
 	{
-		if (SimWorld)
+		if (!SimWorld)
 		{
-			CleanupSimulation();
+			CreateSimulation(GWorld);
+			bIsDirty = false;
 		}
-
-		CreateSimulation(GWorld);
-		bIsDirty = false;
 	}
 
 	const UPathCacheSettings* CacheSettings = GetDefault<UPathCacheSettings>();
@@ -159,7 +157,7 @@ void UGravityCacheSubsystem::TickWorldOneTime(float TimeStep)
 				UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Spline.Simulating->GetRootComponent());
 				if (Cache && Primitive)
 				{
-					Cache->Position.Points.Add({ (float)SimWorld->TimeSeconds, Point.Position });
+					Cache->Position.Points.Add({ (float)SimWorld->TimeSeconds, Spline.Simulating->GetActorLocation() });
 					Cache->Velocity.Points.Add({ (float)SimWorld->TimeSeconds, Velocity });
 					Cache->Rotation.Points.Add({ (float)SimWorld->TimeSeconds, Point.Rotation.Quaternion() });
 					Cache->AngularVelocity.Points.Add({ (float)SimWorld->TimeSeconds, Primitive->GetPhysicsAngularVelocityInDegrees() });
@@ -208,6 +206,7 @@ void UGravityCacheSubsystem::CleanupSimulation()
 	SimWorld->MarkAsGarbage();
 	SimWorld->RemoveFromRoot();
 	GEngine->DestroyWorldContext(SimWorld);
+	SimWorld->GetPackage()->ClearDirtyFlag();
 	SimWorld = nullptr;
 	SimSplines.Empty();
 }
