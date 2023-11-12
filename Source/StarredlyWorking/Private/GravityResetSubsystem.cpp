@@ -6,6 +6,7 @@
 #include "EngineUtils.h"
 #include "GravityActor.h"
 #include "GravityComponent.h"
+#include "Blueprint/UserWidget.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGravityResetSubsystem, Log, All);
 
@@ -154,6 +155,16 @@ void UGravityResetSubsystem::CopyProperty(FProperty* Property, UActorComponent* 
     if (Property->GetName() == TEXT("UberGraphFrame"))
     {
         return;
+    }
+
+    if (const FObjectProperty* ObjectProperty = CastField<const FObjectProperty>(Property))
+    {
+        UObject* Object = ObjectProperty->GetPropertyValue_InContainer(From);
+        if (IsValid(Object) && Object->IsA<UUserWidget>())
+        {
+            // Don't copy widgets.
+            return;
+        }
     }
 
     UE_LOG(LogTemp, Log, TEXT("Copying %s.%s"), *From->GetName(), *Property->GetName());
