@@ -3,18 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "GravityActor.generated.h"
+#include "Components/ActorComponent.h"
+#include "GravityComponent.generated.h"
 
-UCLASS(BlueprintType)
-class STARREDLYWORKING_API AGravityActor : public AActor
+UCLASS(Blueprintable, BlueprintType, meta = (BlueprintSpawnableComponent))
+class STARREDLYWORKING_API UGravityComponent : public UActorComponent
 {
 	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
-	AGravityActor();
 
+public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void OnRemove();
 

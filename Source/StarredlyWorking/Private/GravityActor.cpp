@@ -2,26 +2,32 @@
 
 
 #include "GravityActor.h"
+#include "GravityComponent.h"
 
 // Sets default values
 AGravityActor::AGravityActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.bTickEvenWhenPaused = true;
 }
 
-// Called when the game starts or when spawned
-void AGravityActor::BeginPlay()
+void AGravityActor::OnRemove_Implementation()
 {
-	Super::BeginPlay();
-	
+    for (UActorComponent* Component : GetComponents())
+    {
+        if (UGravityComponent* Gravity = Cast<UGravityComponent>(Component))
+        {
+            Gravity->OnRemove();
+        }
+    }
 }
 
-// Called every frame
-void AGravityActor::Tick(float DeltaTime)
+void AGravityActor::OnRestore_Implementation()
 {
-	Super::Tick(DeltaTime);
-
+    for (UActorComponent* Component : GetComponents())
+    {
+        if (UGravityComponent* Gravity = Cast<UGravityComponent>(Component)) 
+        {
+            Gravity->OnRestore();
+        }
+    }
 }
 

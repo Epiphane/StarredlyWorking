@@ -3,12 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "GravityComponent.h"
 #include "GravityMovementComponent.generated.h"
 
-
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class STARREDLYWORKING_API UGravityMovementComponent : public UActorComponent
+UCLASS(meta=(BlueprintSpawnableComponent))
+class STARREDLYWORKING_API UGravityMovementComponent : public UGravityComponent
 {
 	GENERATED_BODY()
 
@@ -21,10 +20,10 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void OnRemove_Implementation() override;
+	virtual void OnRestore_Implementation() override;
 
+public:	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Density = 1.0f;
 
