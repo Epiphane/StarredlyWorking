@@ -77,21 +77,21 @@ void UGravityResetSubsystem::RestoreState()
     UWorld* World = GetWorld();
     for (TActorIterator<AGravityActor> It(World); It; ++It)
     {
-        if (BackupObjects.Contains(*It))
-        {
-            Restore(*It);
-        }
-        else
+        if (!BackupObjects.Contains(*It))
         {
             Remove(*It);
             World->DestroyActor(*It);
         }
     }
 
+    for (AGravityActor* Original : BackupObjects)
+    {
+        Restore(Original);
+    }
     BackupObjects.Empty();
 }
 
-void UGravityResetSubsystem::Remove(AGravityActor* Actor)
+void UGravityResetSubsystem::Remove(AGravityActor* Actor, bool bSkipNotify)
 {
     Actor->OnRemove();
 

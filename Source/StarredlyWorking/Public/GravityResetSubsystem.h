@@ -21,7 +21,7 @@ public:
 	void RestoreState();
 
 private:
-	void Remove(AGravityActor* Actor);
+	void Remove(AGravityActor* Actor, bool bSkipNotify = false);
 	void Restore(AGravityActor* Actor);
 	void CopyComponent(UActorComponent* From, UActorComponent* To);
 	void CopyProperty(FProperty* Prop, UActorComponent* From, UActorComponent* To);
