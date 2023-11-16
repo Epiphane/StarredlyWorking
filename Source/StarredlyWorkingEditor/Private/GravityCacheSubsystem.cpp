@@ -157,10 +157,10 @@ void UGravityCacheSubsystem::TickWorldOneTime(float TimeStep)
 				UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Spline.Simulating->GetRootComponent());
 				if (Cache && Primitive)
 				{
-					Cache->Position.Points.Add({ (float)SimWorld->TimeSeconds, Spline.Simulating->GetActorLocation() });
-					Cache->Velocity.Points.Add({ (float)SimWorld->TimeSeconds, Velocity });
-					Cache->Rotation.Points.Add({ (float)SimWorld->TimeSeconds, Point.Rotation.Quaternion() });
-					Cache->AngularVelocity.Points.Add({ (float)SimWorld->TimeSeconds, Primitive->GetPhysicsAngularVelocityInDegrees() });
+					Cache->Position.Points.Add({ (float)SimWorld->TimeSeconds, Spline.Simulating->GetActorLocation(), {}, {}, CIM_CurveAuto });
+					Cache->Velocity.Points.Add({ (float)SimWorld->TimeSeconds, Velocity, {}, {}, CIM_CurveAuto });
+					Cache->Rotation.Points.Add({ (float)SimWorld->TimeSeconds, Point.Rotation.Quaternion(), {}, {}, CIM_CurveAuto });
+					Cache->AngularVelocity.Points.Add({ (float)SimWorld->TimeSeconds, Primitive->GetPhysicsAngularVelocityInDegrees(), {}, {}, CIM_CurveAuto });
 				}
 			}
 		}
