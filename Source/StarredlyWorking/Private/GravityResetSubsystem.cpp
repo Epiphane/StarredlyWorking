@@ -24,6 +24,24 @@ void UGravityResetSubsystem::SaveCurrentState()
         ActorsToDuplicate.Add(*It);
     }
 
+    ActorsToDuplicate.Sort([](const AGravityActor& A, const AGravityActor& B) {
+        int ADepth = 0;
+        for (AActor* Parent = A.GetAttachParentActor(); Parent != nullptr; Parent = Parent->GetAttachParentActor())
+        {
+            ++ADepth;
+        }
+
+        int BDepth = 0;
+        for (AActor* Parent = B.GetAttachParentActor(); Parent != nullptr; Parent = Parent->GetAttachParentActor())
+        {
+            ++BDepth;
+        }
+
+        return BDepth > ADepth;
+    });
+
+    TMap<AActor*, AActor*> BaseToCopy;
+
     for (AGravityActor* Base : ActorsToDuplicate)
     {
         FActorSpawnParameters Params;
@@ -33,6 +51,13 @@ void UGravityResetSubsystem::SaveCurrentState()
         Params.Owner = Base->GetOwner();
         Params.OverrideLevel = Base->GetLevel();
         AGravityActor* Transient = World->SpawnActor<AGravityActor>(Base->GetClass(), Params);
+        BaseToCopy.Emplace(Base, Transient);
+
+        if (AActor* Parent = Base->GetAttachParentActor())
+        {
+            FName Socket = Base->GetAttachParentSocketName();
+            Transient->AttachToActor(BaseToCopy.FindChecked(Parent), FAttachmentTransformRules(EAttachmentRule::KeepWorld, EAttachmentRule::KeepWorld, EAttachmentRule::KeepWorld, true), Socket);
+        }
 
         // Duplicate all components separately.
         TArray<UActorComponent*> BaseComponents = Base->GetComponents().Array();
