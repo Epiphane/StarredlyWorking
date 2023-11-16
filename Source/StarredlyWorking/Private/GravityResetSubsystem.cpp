@@ -44,19 +44,43 @@ void UGravityResetSubsystem::SaveCurrentState()
 
     for (AGravityActor* Base : ActorsToDuplicate)
     {
-        FActorSpawnParameters Params;
-        Params.Name = Base->GetFName();
-        Params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Requested;
-        Params.Template = Base;
-        Params.Owner = Base->GetOwner();
-        Params.OverrideLevel = Base->GetLevel();
-        AGravityActor* Transient = World->SpawnActor<AGravityActor>(Base->GetClass(), Params);
+        AGravityActor* Transient = nullptr;
+        AActor* AttachParent = Base->GetAttachParentActor();
+        FName AttachSocket = Base->GetAttachParentSocketName();
+        if (AttachParent)
+        {
+            // Switch from the base parent to the new (transient) parent.
+            AttachParent = BaseToCopy.FindChecked(AttachParent);
+
+            TArray<AActor*> Children;
+            AttachParent->GetAttachedActors(Children);
+
+            for (AActor* Child : Children)
+            {
+                // This is probably the dupe we're looking for!
+                if (Child->GetAttachParentSocketName() == AttachSocket)
+                {
+                    Transient = Cast<AGravityActor>(Child);
+                    break;
+                }
+            }
+        }
+
+        if (Transient == nullptr)
+        {
+            FActorSpawnParameters Params;
+            Params.Name = Base->GetFName();
+            Params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Requested;
+            Params.Template = Base;
+            Params.Owner = Base->GetOwner();
+            Params.OverrideLevel = Base->GetLevel();
+            Transient = World->SpawnActor<AGravityActor>(Base->GetClass(), Params);
+        }
         BaseToCopy.Emplace(Base, Transient);
 
-        if (AActor* Parent = Base->GetAttachParentActor())
+        if (AttachParent)
         {
-            FName Socket = Base->GetAttachParentSocketName();
-            Transient->AttachToActor(BaseToCopy.FindChecked(Parent), FAttachmentTransformRules(EAttachmentRule::KeepWorld, EAttachmentRule::KeepWorld, EAttachmentRule::KeepWorld, true), Socket);
+            Transient->AttachToActor(AttachParent, FAttachmentTransformRules(EAttachmentRule::KeepWorld, EAttachmentRule::KeepWorld, EAttachmentRule::KeepWorld, true), AttachSocket);
         }
 
         // Duplicate all components separately.
