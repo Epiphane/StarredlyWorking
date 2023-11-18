@@ -74,3 +74,4 @@ Plugins/*/Intermediate/*
 # Cache files for the editor to use
 DerivedDataCache/*
 enc_temp_folder/*
+spacescape/app/win/app.log
