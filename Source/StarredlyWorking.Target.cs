@@ -2,6 +2,7 @@
 
 using UnrealBuildTool;
 using System.Collections.Generic;
+using System.IO;
 
 public class StarredlyWorkingTarget : TargetRules
 {
@@ -10,6 +11,9 @@ public class StarredlyWorkingTarget : TargetRules
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V4;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_3;
-		ExtraModuleNames.Add("StarredlyWorking");
+		ExtraModuleNames.AddRange(new string[] {
+			"DeterministicPhysics",
+			"StarredlyWorking",
+		});
 	}
 }

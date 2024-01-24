@@ -1,5 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
+using System.IO;
 using UnrealBuildTool;
 
 public class StarredlyWorking : ModuleRules
@@ -11,9 +12,10 @@ public class StarredlyWorking : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[] {
 			"Core",
 			"CoreUObject",
+			"DeterministicPhysics",
 			"Engine",
 			"InputCore",
 			"UMG",
 		});
-	}
+    }
 }

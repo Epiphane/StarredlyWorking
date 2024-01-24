@@ -3,4 +3,4 @@
 #include "StarredlyWorkingEditor.h"
 #include "Modules/ModuleManager.h"
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, StarredlyWorkingEditor, "StarredlyWorkingEditor" );
+IMPLEMENT_MODULE(FDefaultModuleImpl, StarredlyWorkingEditor);

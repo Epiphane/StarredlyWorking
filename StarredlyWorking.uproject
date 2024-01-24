@@ -5,6 +5,14 @@
 	"Description": "",
 	"Modules": [
 		{
+			"Name": "DeterministicPhysics",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		},
+		{
 			"Name": "StarredlyWorking",
 			"Type": "Runtime",
 			"LoadingPhase": "Default",
